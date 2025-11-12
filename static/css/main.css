@@ -1,0 +1,12 @@
+/*HEADER*/
+header {
+    position:sticky;
+    top: 0;
+    z-main: 1000;
+    background: #fff;
+}
+
+.header__img {
+    height: 64px;
+    width: 64px;
+}

@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Вход | InnerFlow
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4 p-md-5">
+                <!-- Логотип -->
+                <div class="text-center mb-4">
+                    <img class="header__img" src="{{ url_for('static', filename='img/logotip.png') }}" alt="InnerFlow" width="80" height="80">
+                </div>
+
+                <h2 class="text-center mb-4">Вход в аккаунт</h2>
+
+                <form id="quickLoginForm">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="username" name="username"
+                               placeholder="Ваш ник" required>
+                        <label for="username">Ваш ник</label>
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <input type="password" class="form-control" id="password" name="password"
+                               placeholder="Ваш пароль" required>
+                        <label for="password">Пароль</label>
+                    </div>
+
+                    <button class="btn btn-primary w-100 py-2 mb-3" type="submit">
+                        Войти
+                    </button>
+
+                    <div class="text-center">
+                        <small class="text-muted">
+                            Нет аккаунта? <a href="{{ url_for('registration') }}" class="text-decoration-none">Зарегистрироваться</a>
+                        </small>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <small class="text-body-secondary">© 2025 InnerFlow</small>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('quickLoginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        fetch('/quick-login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                username: username,
+                password: password
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/main';
+            } else {
+                alert('Ошибка: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Произошла ошибка при входе');
+        });
+    });
+</script>
+{% endblock %}

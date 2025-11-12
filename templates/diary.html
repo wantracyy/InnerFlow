@@ -1,0 +1,163 @@
+{% extends 'base_app.html' %}
+
+{% block title %}
+Дневник | InnerFlow
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1 class="welcome-title">Как вы себя чувствуете?</h1>
+    <div class="date-time" id="currentDateTime">загрузка...</div>
+</div>
+
+<div class="mood-card">
+    <div class="card-title">Ваше состояние сегодня</div>
+    <textarea
+        class="mood-input"
+        placeholder="Опишите ваше настроение, мысли и чувства..."
+        rows="5"
+    ></textarea>
+</div>
+
+<style>
+    .header {
+        margin-bottom: 40px;
+        text-align: center;
+    }
+
+    .welcome-title {
+        font-size: 32px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 15px;
+    }
+
+    .date-time {
+        font-size: 18px;
+        color: #5d6afb;
+        font-weight: 500;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #f0f4ff, #e6eeff);
+        border-radius: 25px;
+        display: inline-block;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .date-time:hover {
+        background: linear-gradient(135deg, #5d6afb, #764ba2);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(93, 106, 251, 0.3);
+    }
+
+    .mood-card {
+        background: white;
+        padding: 35px;
+        border-radius: 20px;
+        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+        margin-bottom: 30px;
+        border: 1px solid #f0f4ff;
+    }
+
+    .card-title {
+        font-size: 22px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 25px;
+    }
+
+    .mood-input {
+        width: 100%;
+        min-height: 120px;
+        padding: 20px;
+        border: 2px solid #e6eeff;
+        border-radius: 15px;
+        font-size: 16px;
+        resize: vertical;
+        outline: none;
+        transition: all 0.3s ease;
+    }
+
+    .mood-input:focus {
+        border-color: #5d6afb;
+        box-shadow: 0 0 0 3px rgba(93, 106, 251, 0.1);
+    }
+
+    .mood-input::placeholder {
+        color: #bdc3c7;
+    }
+    </style>
+
+<script>
+    // Функция для форматирования даты и времени
+    function updateDateTime() {
+        const now = new Date();
+
+        // Русские названия месяцев
+        const months = [
+            'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+            'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+        ];
+
+        // Русские названия дней недели
+        const daysOfWeek = [
+            'воскресенье', 'понедельник', 'вторник', 'среда',
+            'четверг', 'пятница', 'суббота'
+        ];
+
+        const day = now.getDate();
+        const month = months[now.getMonth()];
+        const year = now.getFullYear();
+        const dayOfWeek = daysOfWeek[now.getDay()];
+
+        // Форматирование времени
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+
+        // Определяем "сегодня", "вчера" или дату
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const currentDate = new Date(now);
+        currentDate.setHours(0, 0, 0, 0);
+
+        let dateString;
+        if (currentDate.getTime() === today.getTime()) {
+            dateString = 'сегодня';
+        } else if (currentDate.getTime() === yesterday.getTime()) {
+            dateString = 'вчера';
+        } else {
+            dateString = `${day} ${month}`;
+        }
+
+        // Обновляем элемент
+        document.getElementById('currentDateTime').textContent =
+            `${dateString}, ${hours}:${minutes}`;
+
+        // Добавляем title с полной датой для подсказки
+        document.getElementById('currentDateTime').title =
+            `${dayOfWeek}, ${day} ${month} ${year} года, ${hours}:${minutes}`;
+    }
+
+    // Обработчик клика на дату
+    document.addEventListener('DOMContentLoaded', function() {
+        updateDateTime();
+
+        // Обновляем время каждую минуту
+        setInterval(updateDateTime, 60000);
+
+        document.getElementById('currentDateTime').addEventListener('click', function() {
+            alert('Открыть календарь для выбора даты');
+            // Здесь можно добавить функционал выбора даты
+        });
+
+        // Фокус на текстовое поле при загрузке
+        document.querySelector('.mood-input').focus();
+    });
+    </script>
+{% endblock %}

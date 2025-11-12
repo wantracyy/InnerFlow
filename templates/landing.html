@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InnerFlow - Ментальное здоровье</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        .landing-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            max-width: 600px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        .logo {
+            font-size: 48px;
+            font-weight: 700;
+            color: #5d6afb;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="landing-container">
+        <div class="logo">InnerFlow</div>
+        <h1 class="display-4 mb-4">Пространство для ментального здоровья</h1>
+        <p class="lead mb-4">Личный дневник, медитации и поддержка в одном приложении</p>
+        <div class="d-grid gap-2 d-md-block">
+            <a href="{{ url_for('login_page') }}" class="btn btn-outline-secondary btn-lg">
+                Войти
+            </a>
+            <a href="{{ url_for('registration') }}" class="btn btn-primary btn-lg me-md-2">
+                Регистрация
+            </a>
+        </div>
+    </div>
+</body>
+</html>

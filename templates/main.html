@@ -1,0 +1,616 @@
+{% extends 'base_app.html' %}
+
+{% block title %}
+Главная | InnerFlow
+{% endblock %}
+
+{% block content %}
+<div class="layout-container">
+    <!-- Компактный календарь -->
+    <div class="compact-calendar">
+        <!-- Навигация календаря -->
+        <div class="calendar-nav">
+            <button class="nav-btn" id="prevMonth">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+
+            <div class="month-year" id="currentMonthYear">
+                Загрузка...
+            </div>
+
+            <button class="nav-btn" id="nextMonth">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <!-- Дни недели -->
+        <div class="calendar-grid" id="calendarGrid">
+            <!-- Заполнится JavaScript -->
+        </div>
+    </div>
+
+    <!-- Большой чат с ИИ -->
+    <div class="expanded-chat">
+        <div class="chat-header">
+            <div class="message-header">
+                <i class="fas fa-robot me-2"></i>ИИ Помощник
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai-message">
+                <div class="message-content">
+                    <p>Привет! 👋 Рад тебя видеть!</p>
+                    <p>Как твоё настроение сегодня? Хочешь поделиться мыслями или чувствами?</p>
+                </div>
+                <div class="message-time">только что</div>
+            </div>
+        </div>
+
+        <div class="quick-questions">
+            <div class="questions-title">Быстрые вопросы:</div>
+            <div class="questions-grid">
+                <button class="question-btn" data-question="Как улучшить настроение?">
+                    Как улучшить настроение?
+                </button>
+                <button class="question-btn" data-question="Что делать при стрессе?">
+                    Что делать при стрессе?
+                </button>
+                <button class="question-btn" data-question="Как справиться с тревогой?">
+                    Как справиться с тревогой?
+                </button>
+                <button class="question-btn" data-question="Расскажи про техники дыхания">
+                    Техники дыхания
+                </button>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <div class="input-group">
+                <input type="text" class="chat-input" id="chatInput"
+                       placeholder="Напишите ваше сообщение...">
+                <button class="send-btn" id="sendBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.layout-container {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 25px;
+    height: calc(100vh - 200px);
+}
+
+/* Компактный календарь */
+.compact-calendar {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #f0f4ff;
+    height: fit-content;
+}
+
+.calendar-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 0 5px;
+}
+
+.nav-btn {
+    background: linear-gradient(135deg, #f0f4ff, #e6eeff);
+    border: none;
+    border-radius: 10px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #5d6afb;
+    font-size: 12px;
+}
+
+.nav-btn:hover {
+    background: linear-gradient(135deg, #5d6afb, #764ba2);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.month-year {
+    font-size: 16px;
+    font-weight: 600;
+    color: #5d6afb;
+    text-align: center;
+    flex: 1;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    text-align: center;
+}
+
+.day-header {
+    font-weight: 600;
+    color: #764ba2;
+    padding: 8px 0;
+    font-size: 11px;
+    border-bottom: 1px solid #f0f4ff;
+}
+
+.day {
+    padding: 8px 0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-weight: 500;
+    position: relative;
+    border: 1px solid transparent;
+    font-size: 13px;
+}
+
+.day:hover {
+    background: #f8f9ff;
+    transform: translateY(-1px);
+    border-color: #e6eeff;
+}
+
+.current-day {
+    background: linear-gradient(135deg, #5d6afb, #764ba2);
+    color: white;
+    box-shadow: 0 2px 8px rgba(93, 106, 251, 0.3);
+}
+
+.other-month {
+    color: #bdc3c7;
+    opacity: 0.6;
+}
+
+.has-entry::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 3px;
+    background: #5d6afb;
+    border-radius: 50%;
+}
+
+.current-day.has-entry::after {
+    background: white;
+}
+
+/* Расширенный чат */
+.expanded-chat {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #f0f4ff;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chat-header {
+    padding: 20px 25px 15px;
+    border-bottom: 1px solid #f0f4ff;
+}
+
+.message-header {
+    font-weight: 600;
+    color: #5d6afb;
+    font-size: 18px;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 20px 25px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-height: 400px;
+}
+
+.message {
+    padding: 15px 20px;
+    border-radius: 12px;
+    max-width: 80%;
+}
+
+.ai-message {
+    background: linear-gradient(135deg, #f0f4ff, #e6eeff);
+    border-left: 3px solid #5d6afb;
+    align-self: flex-start;
+}
+
+.message-content {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #2c3e50;
+}
+
+.message-content p {
+    margin-bottom: 8px;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
+.message-time {
+    font-size: 11px;
+    color: #95a5a6;
+    margin-top: 8px;
+    text-align: right;
+}
+
+/* Быстрые вопросы */
+.quick-questions {
+    padding: 15px 25px;
+    border-top: 1px solid #f0f4ff;
+    border-bottom: 1px solid #f0f4ff;
+    background: #fafbff;
+}
+
+.questions-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #5d6afb;
+    margin-bottom: 10px;
+}
+
+.questions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.question-btn {
+    background: white;
+    border: 1px solid #e6eeff;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #5d6afb;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+}
+
+.question-btn:hover {
+    background: #f0f4ff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(93, 106, 251, 0.1);
+}
+
+/* Поле ввода */
+.chat-input-container {
+    padding: 20px 25px;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.chat-input {
+    flex: 1;
+    border: 1px solid #e6eeff;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: #fafbff;
+}
+
+.chat-input:focus {
+    outline: none;
+    border-color: #5d6afb;
+    box-shadow: 0 0 0 3px rgba(93, 106, 251, 0.1);
+    background: white;
+}
+
+.send-btn {
+    background: linear-gradient(135deg, #5d6afb, #764ba2);
+    border: none;
+    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.send-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(93, 106, 251, 0.3);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.day {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Скроллбар */
+.chat-messages::-webkit-scrollbar {
+    width: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 2px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #c5c5c5;
+    border-radius: 2px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>
+
+<script>
+class Calendar {
+    constructor() {
+        this.currentDate = new Date();
+        this.currentYear = this.currentDate.getFullYear();
+        this.currentMonth = this.currentDate.getMonth();
+        this.currentDay = this.currentDate.getDate();
+        this.init();
+    }
+
+    init() {
+        this.renderCalendar();
+        this.setupEventListeners();
+        this.setupChat();
+    }
+
+    getMonthName(month) {
+        const months = [
+            'ЯНВАРЬ', 'ФЕВРАЛЬ', 'МАРТ', 'АПРЕЛЬ', 'МАЙ', 'ИЮНЬ',
+            'ИЮЛЬ', 'АВГУСТ', 'СЕНТЯБРЬ', 'ОКТЯБРЬ', 'НОЯБРЬ', 'ДЕКАБРЬ'
+        ];
+        return months[month];
+    }
+
+    getDayNames() {
+        return ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+    }
+
+    getFirstDayOfMonth(year, month) {
+        const day = new Date(year, month, 1).getDay();
+        return day === 0 ? 6 : day - 1; // Приводим к формату ПН=0, ВС=6
+    }
+
+    getDaysInMonth(year, month) {
+        return new Date(year, month + 1, 0).getDate();
+    }
+
+    generateCalendarDays() {
+        const days = [];
+        const firstDay = this.getFirstDayOfMonth(this.currentYear, this.currentMonth);
+        const daysInMonth = this.getDaysInMonth(this.currentYear, this.currentMonth);
+
+        // Дни предыдущего месяца
+        const prevMonthDays = this.getDaysInMonth(this.currentYear, this.currentMonth - 1);
+        for (let i = firstDay - 1; i >= 0; i--) {
+            days.push({
+                day: prevMonthDays - i,
+                isCurrentMonth: false,
+                isToday: false
+            });
+        }
+
+        // Дни текущего месяца
+        for (let i = 1; i <= daysInMonth; i++) {
+            const isToday = i === this.currentDay &&
+                           this.currentMonth === new Date().getMonth() &&
+                           this.currentYear === new Date().getFullYear();
+            days.push({
+                day: i,
+                isCurrentMonth: true,
+                isToday: isToday
+            });
+        }
+
+        // Дни следующего месяца
+        const totalCells = 42;
+        const nextMonthDays = totalCells - days.length;
+        for (let i = 1; i <= nextMonthDays; i++) {
+            days.push({
+                day: i,
+                isCurrentMonth: false,
+                isToday: false
+            });
+        }
+
+        return days;
+    }
+
+    renderCalendar() {
+        const monthYearElement = document.getElementById('currentMonthYear');
+        const calendarGrid = document.getElementById('calendarGrid');
+
+        monthYearElement.textContent = `${this.getMonthName(this.currentMonth)} ${this.currentYear}`;
+        calendarGrid.innerHTML = '';
+
+        // Добавить заголовки дней
+        this.getDayNames().forEach(dayName => {
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'day-header';
+            dayHeader.textContent = dayName;
+            calendarGrid.appendChild(dayHeader);
+        });
+
+        // Добавить дни
+        const days = this.generateCalendarDays();
+        days.forEach(day => {
+            const dayElement = document.createElement('div');
+            dayElement.className = 'day';
+            dayElement.textContent = day.day;
+
+            if (!day.isCurrentMonth) {
+                dayElement.classList.add('other-month');
+            }
+
+            if (day.isToday) {
+                dayElement.classList.add('current-day');
+            }
+
+            // Случайные записи для демонстрации
+            if (day.isCurrentMonth && Math.random() > 0.7) {
+                dayElement.classList.add('has-entry');
+            }
+
+            dayElement.addEventListener('click', () => this.handleDayClick(day));
+            calendarGrid.appendChild(dayElement);
+        });
+    }
+
+    handleDayClick(day) {
+        if (!day.isCurrentMonth) return;
+
+        document.querySelectorAll('.day').forEach(d => {
+            d.classList.remove('current-day');
+        });
+
+        event.target.classList.add('current-day');
+
+        const selectedDate = new Date(this.currentYear, this.currentMonth, day.day);
+        this.addMessage(`Выбрана дата: ${selectedDate.toLocaleDateString('ru-RU')}`);
+    }
+
+    changeMonth(direction) {
+        this.currentMonth += direction;
+
+        if (this.currentMonth > 11) {
+            this.currentMonth = 0;
+            this.currentYear++;
+        } else if (this.currentMonth < 0) {
+            this.currentMonth = 11;
+            this.currentYear--;
+        }
+
+        this.renderCalendar();
+    }
+
+    setupEventListeners() {
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            this.changeMonth(-1);
+        });
+
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            this.changeMonth(1);
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                this.changeMonth(-1);
+            } else if (e.key === 'ArrowRight') {
+                this.changeMonth(1);
+            }
+        });
+    }
+
+    setupChat() {
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const questionBtns = document.querySelectorAll('.question-btn');
+
+        // Отправка сообщения
+        const sendMessage = () => {
+            const message = chatInput.value.trim();
+            if (message) {
+                this.addMessage(message, 'user');
+                chatInput.value = '';
+
+                // Имитация ответа ИИ
+                setTimeout(() => {
+                    this.addMessage(this.generateAIResponse(message), 'ai');
+                }, 1000);
+            }
+        };
+
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Быстрые вопросы
+        questionBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const question = btn.getAttribute('data-question');
+                this.addMessage(question, 'user');
+
+                setTimeout(() => {
+                    this.addMessage(this.generateAIResponse(question), 'ai');
+                }, 1000);
+            });
+        });
+    }
+
+    addMessage(text, type = 'ai') {
+        const chatMessages = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+
+        messageDiv.className = `message ${type === 'ai' ? 'ai-message' : 'user-message'}`;
+        messageDiv.innerHTML = `
+            <div class="message-content">${text}</div>
+            <div class="message-time">только что</div>
+        `;
+
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Добавляем стили для пользовательских сообщений
+        if (type === 'user') {
+            messageDiv.style.alignSelf = 'flex-end';
+            messageDiv.style.background = 'linear-gradient(135deg, #5d6afb, #764ba2)';
+            messageDiv.style.color = 'white';
+            messageDiv.style.borderLeft = '3px solid #764ba2';
+        }
+    }
+
+    generateAIResponse(question) {
+        const responses = {
+            'Как улучшить настроение?': 'Попробуйте сделать небольшую зарядку, послушать любимую музыку или позвонить другу. Иногда помогает просто выйти на прогулку и подышать свежим воздухом ',
+            'Что делать при стрессе?': 'Попробуйте технику глубокого дыхания: вдох на 4 счета, задержка на 4, выдох на 6 ',
+            'Как справиться с тревогой?': 'Сосредоточьтесь на настоящем моменте. Назовите 5 вещей, которые видите, 4 которые слышите, 3 которые чувствуете. Это поможет заземлиться ',
+            'Расскажи про техники дыхания': 'Отличная идея! Попробуйте "квадратное дыхание": вдох 4 сек → пауза 4 сек → выдох 4 сек → пауза 4 сек. Повторите 5-10 раз '
+        };
+
+        return responses[question] || 'Спасибо за ваш вопрос! Я здесь, чтобы поддержать вас. Расскажите подробнее о том, что вас беспокоит? 💫';
+    }
+}
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    new Calendar();
+});
+</script>
+{% endblock %}
