@@ -8,15 +8,21 @@
 <div class="header">
     <h1 class="welcome-title">Как вы себя чувствуете?</h1>
     <div class="date-time" id="currentDateTime">загрузка...</div>
+    <input type="hidden" id="selectedDate" value="{{ request.args.get('date', '') }}">
 </div>
 
 <div class="mood-card">
-    <div class="card-title">Ваше состояние сегодня</div>
+    <div class="card-title" id="dateTitle">Ваше состояние сегодня</div>
     <textarea
         class="mood-input"
         placeholder="Опишите ваше настроение, мысли и чувства..."
         rows="5"
     ></textarea>
+    <div class="d-flex justify-content-end align-items-center mt-3">
+        <button class="btn btn-primary" onclick="saveDiaryEntry()">
+            <i class="fas fa-save"></i> Сохранить
+        </button>
+    </div>
 </div>
 
 <style>
@@ -88,76 +94,184 @@
     .mood-input::placeholder {
         color: #bdc3c7;
     }
-    </style>
+</style>
 
 <script>
+    // Функция для получения даты из URL параметра
+    function getSelectedDate() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const dateParam = urlParams.get('date');
+
+        if (!dateParam) {
+            return new Date();
+        }
+
+        const [year, month, day] = dateParam.split('-').map(Number);
+        const selectedDate = new Date(year, month - 1, day);
+
+        return selectedDate;
+    }
+
+    // Функция для получения даты в формате YYYY-MM-DD
+    function getFormattedDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     // Функция для форматирования даты и времени
     function updateDateTime() {
         const now = new Date();
+        const selectedDate = getSelectedDate();
 
-        // Русские названия месяцев
         const months = [
             'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
             'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
         ];
 
-        // Русские названия дней недели
         const daysOfWeek = [
             'воскресенье', 'понедельник', 'вторник', 'среда',
             'четверг', 'пятница', 'суббота'
         ];
 
-        const day = now.getDate();
-        const month = months[now.getMonth()];
-        const year = now.getFullYear();
-        const dayOfWeek = daysOfWeek[now.getDay()];
-
-        // Форматирование времени
+        const day = selectedDate.getDate();
+        const month = months[selectedDate.getMonth()];
+        const year = selectedDate.getFullYear();
+        const dayOfWeek = daysOfWeek[selectedDate.getDay()];
         const hours = now.getHours().toString().padStart(2, '0');
         const minutes = now.getMinutes().toString().padStart(2, '0');
 
-        // Определяем "сегодня", "вчера" или дату
+        // Обновляем заголовок
+        const dateTitle = document.getElementById('dateTitle');
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
+        const selectedDateOnly = new Date(selectedDate);
+        selectedDateOnly.setHours(0, 0, 0, 0);
 
-        const currentDate = new Date(now);
-        currentDate.setHours(0, 0, 0, 0);
-
-        let dateString;
-        if (currentDate.getTime() === today.getTime()) {
-            dateString = 'сегодня';
-        } else if (currentDate.getTime() === yesterday.getTime()) {
-            dateString = 'вчера';
+        if (selectedDateOnly.getTime() === today.getTime()) {
+            dateTitle.textContent = 'Ваше состояние сегодня';
+        } else if (selectedDateOnly.getTime() === today.getTime() - 86400000) {
+            dateTitle.textContent = 'Ваше состояние вчера';
         } else {
-            dateString = `${day} ${month}`;
+            dateTitle.textContent = `Ваше состояние ${day} ${month} ${year}`;
         }
 
-        // Обновляем элемент
+        // Обновляем элемент с датой и временем
         document.getElementById('currentDateTime').textContent =
-            `${dateString}, ${hours}:${minutes}`;
+            `${day} ${month} ${year}, ${dayOfWeek}, ${hours}:${minutes}`;
+    }
 
-        // Добавляем title с полной датой для подсказки
-        document.getElementById('currentDateTime').title =
-            `${dayOfWeek}, ${day} ${month} ${year} года, ${hours}:${minutes}`;
+    // Функция для загрузки существующей записи
+    function loadExistingEntry() {
+        const selectedDate = getSelectedDate();
+        const formattedDate = getFormattedDate(selectedDate);
+
+        fetch(`/get-diary-entry?date=${formattedDate}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.entry) {
+                    document.querySelector('.mood-input').value = data.entry.content;
+                    showNotification('Запись загружена', 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки:', error);
+            });
+    }
+
+    // Функция для сохранения записи
+    function saveDiaryEntry() {
+        const content = document.querySelector('.mood-input').value.trim();
+        const selectedDate = getSelectedDate();
+        const formattedDate = getFormattedDate(selectedDate);
+
+        if (!content) {
+            showNotification('Запись не может быть пустой', 'warning');
+            return;
+        }
+
+        fetch('/save-diary-entry', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                content: content,
+                date: formattedDate
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+            } else {
+                showNotification('Ошибка: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showNotification('Ошибка сохранения', 'error');
+        });
+    }
+
+    // Функция для показа уведомлений
+    function showNotification(message, type = 'info') {
+        // Создаем элемент уведомления
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show`;
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        // Добавляем стили для уведомления
+        notification.style.position = 'fixed';
+        notification.style.top = '20px';
+        notification.style.right = '20px';
+        notification.style.zIndex = '1000';
+        notification.style.minWidth = '300px';
+
+        document.body.appendChild(notification);
+
+        // Автоматически удаляем через 3 секунды
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 3000);
     }
 
     // Обработчик клика на дату
     document.addEventListener('DOMContentLoaded', function() {
         updateDateTime();
-
-        // Обновляем время каждую минуту
         setInterval(updateDateTime, 60000);
 
         document.getElementById('currentDateTime').addEventListener('click', function() {
-            alert('Открыть календарь для выбора даты');
-            // Здесь можно добавить функционал выбора даты
+            window.location.href = '/main';
+        });
+
+        // Загружаем существующую запись
+        loadExistingEntry();
+
+        // Автосохранение при потере фокуса
+        document.querySelector('.mood-input').addEventListener('blur', function() {
+            if (this.value.trim()) {
+                saveDiaryEntry();
+            }
+        });
+
+        // Сохранение при нажатии Ctrl+S
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveDiaryEntry();
+            }
         });
 
         // Фокус на текстовое поле при загрузке
         document.querySelector('.mood-input').focus();
     });
-    </script>
+</script>
 {% endblock %}

@@ -491,16 +491,27 @@ class Calendar {
     }
 
     handleDayClick(day) {
-        if (!day.isCurrentMonth) return;
+    if (!day.isCurrentMonth) return;
 
-        document.querySelectorAll('.day').forEach(d => {
-            d.classList.remove('current-day');
-        });
+    document.querySelectorAll('.day').forEach(d => {
+        d.classList.remove('current-day');
+    });
 
-        event.target.classList.add('current-day');
+    event.target.classList.add('current-day');
 
-        const selectedDate = new Date(this.currentYear, this.currentMonth, day.day);
-        this.addMessage(`Выбрана дата: ${selectedDate.toLocaleDateString('ru-RU')}`);
+    // СОЗДАЕМ ДАТУ БЕЗ ВРЕМЕНИ - только год, месяц, день
+    const selectedDate = new Date(this.currentYear, this.currentMonth, day.day);
+
+    // Форматируем дату вручную, избегая проблем с часовыми поясами
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const dayFormatted = String(selectedDate.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${dayFormatted}`;
+
+    console.log('Кликнута дата:', day.day, 'Форматированная:', formattedDate);
+
+    // Переходим на страницу дневника с выбранной датой
+    window.location.href = `/diary?date=${formattedDate}`;
     }
 
     changeMonth(direction) {

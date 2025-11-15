@@ -10,15 +10,36 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///InnerFlow.db'
 app.config['SECRET_KEY'] = 'your-secret-key-change-this'
 db = SQLAlchemy(app)
 
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+
+class DiaryEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'date': self.date.isoformat(),
+            'content': self.content,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+
 def hash_password(password):
     salt = secrets.token_hex(16)
     return hashlib.sha256((password + salt).encode()).hexdigest() + ':' + salt
+
 
 def verify_password(password, stored_hash):
     try:
@@ -26,6 +47,7 @@ def verify_password(password, stored_hash):
         return stored_hash == hashlib.sha256((password + salt).encode()).hexdigest()
     except:
         return False
+
 
 def login_required(f):
     @wraps(f)
@@ -57,7 +79,8 @@ def main():
 @app.route("/diary")
 @login_required
 def diary():
-    return render_template('diary.html')
+    selected_date = request.args.get('date')
+    return render_template('diary.html', selected_date=selected_date)
 
 @app.route("/harmony")
 @login_required
@@ -143,10 +166,95 @@ def logout():
     session.clear()
     return redirect('/')
 
+
+@app.route('/save-diary-entry', methods=['POST'])
+def save_diary_entry():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Необходимо авторизоваться'})
+
+    data = request.get_json()
+    content = data.get('content')
+    date_str = data.get('date')
+
+    if not content:
+        return jsonify({'success': False, 'error': 'Запись не может быть пустой'})
+
+    try:
+        # Парсим дату из строки
+        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+
+        # Проверяем, есть ли уже запись на эту дату
+        existing_entry = DiaryEntry.query.filter_by(
+            user_id=session['user_id'],
+            date=date
+        ).first()
+
+        if existing_entry:
+            # Обновляем существующую запись
+            existing_entry.content = content
+            existing_entry.updated_at = datetime.utcnow()
+            message = 'Запись обновлена'
+        else:
+            # Создаем новую запись
+            new_entry = DiaryEntry(
+                user_id=session['user_id'],
+                date=date,
+                content=content
+            )
+            db.session.add(new_entry)
+            message = 'Запись сохранена'
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': message})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Ошибка сохранения: {str(e)}'})
+
+
+@app.route('/get-diary-entry', methods=['GET'])
+def get_diary_entry():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Необходимо авторизоваться'})
+
+    date_str = request.args.get('date')
+
+    try:
+        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+
+        entry = DiaryEntry.query.filter_by(
+            user_id=session['user_id'],
+            date=date
+        ).first()
+
+        if entry:
+            return jsonify({'success': True, 'entry': entry.to_dict()})
+        else:
+            return jsonify({'success': True, 'entry': None})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Ошибка загрузки: {str(e)}'})
+
+
+@app.route('/get-diary-entries', methods=['GET'])
+def get_diary_entries():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Необходимо авторизоваться'})
+
+    # Получаем все записи пользователя
+    entries = DiaryEntry.query.filter_by(user_id=session['user_id']).order_by(DiaryEntry.date.desc()).all()
+
+    return jsonify({
+        'success': True,
+        'entries': [entry.to_dict() for entry in entries]
+    })
+
+
 def init_db():
     with app.app_context():
         db.create_all()
         print("✅ База данных инициализирована!")
+
 
 if __name__ == '__main__':
     init_db()
